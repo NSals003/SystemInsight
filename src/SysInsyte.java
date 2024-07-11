@@ -1,36 +1,29 @@
-// SysInsyte is a Graphical Application in Java designed to assist IT professionals in troubleshooting
-// In cases where remote access is not possible and where the end user may not know how to navigate throughout the OS.
-// It is compatible with most Linux distributions and modern Windows (10, 11, etc.)
-// Any possible additions are welcome as I'm relatively new to Java and programming as a whole :)
+/** SysInsyte is a Graphical Application in Java designed to assist IT professionals in troubleshooting
+In cases where remote access is not possible and where the end user may not know how to navigate throughout the OS.
+It is compatible with most Linux distributions and modern Windows (10, 11, etc.)
+Any possible additions are welcome as I'm relatively new to Java and programming as a whole :)
+Created by: Noah Salsgiver */
 
 
-// Import libaries for GUI like Swing, AWT, and BufferedReader/InputStreamReader
-
+// Import tools for GUI like Swing, AWT, and BufferedReader/InputStreamReader for reading program output
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+// Import libraries for OSHI
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.CentralProcessor.ProcessorIdentifier;
 import oshi.hardware.HardwareAbstractionLayer;
 
 public class SysInsyte {
-    // Declares any encapsulated variables as necessary.
 
-    // Detects Operating System using System Property.
-    public String getOperatingSystem() {
-        return System.getProperty("os.name");
-    }
-
-    // Displays Operating System and Mode to run in to user
-    public void OSPopUpGUI() {
-        JOptionPane.showMessageDialog(null, "You are Running " + getOperatingSystem() + "!" + "\nNow entering " + getOperatingSystem() + " Mode!");
-    }
-
-    // Creates the main Utility GUI Frame
+    // Creates the main Utility GUI Frame for Linux Mode
     public void CreateInsyteGUILinux() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         JFrame frame = new JFrame();
 
@@ -57,7 +50,7 @@ public class SysInsyte {
         panel.add(FreespaceButton);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
         panel.add(OpenTerminalButton);
-        panel.add(Box.createRigidArea(new Dimension(0,10)));
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
         panel.add(updatePackageManagerButton);
 
         JTextArea textArea = new JTextArea();
@@ -65,7 +58,7 @@ public class SysInsyte {
         textArea.setEditable(false);
 
         JTextArea textAreaOS = new JTextArea();
-        textAreaOS.setText("Linux Distribution: " + getLinuxDistro(getLinuxDistro()) + "\n" );
+        textAreaOS.setText("Linux Distribution: " + getLinuxDistro(getLinuxDistro()) + "\n");
         textAreaOS.setEditable(false);
 
         JTextArea textAreaPM = new JTextArea();
@@ -82,7 +75,6 @@ public class SysInsyte {
         JTextArea textArea3 = new JTextArea();
         textArea3.setText("\nHome Partition \n" + getDiskInfo("/home"));
         textArea3.setEditable(false);
-
 
 
         panel.add(textArea, BorderLayout.CENTER);
@@ -137,12 +129,12 @@ public class SysInsyte {
                     If you proceed, you will be prompted to enter your password through a separate graphical prompt.\
 
                     This is handled securely through polkit. This program does not receive or log your password.\
-                    
+                                       \s
                     The program will hang until the system update is complete. Please do not try to close out of it! \
 
                     SysInsyte is not responsible for any system breakages as a result of you performing an update!\
 
-                    Would you like to proceed?""", "Update Confirm Prompt",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+                    Would you like to proceed?""", "Update Confirm Prompt", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (response == JOptionPane.YES_OPTION) {
                 String packageUpdate = updatePackageManager(getPackageManager());
 
@@ -161,172 +153,29 @@ public class SysInsyte {
             }
         });
     }
-    private String getCPUInfo() {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            // Creates ProcessBuilder Instance to launch lscpu command
-            ProcessBuilder processBuilder = new ProcessBuilder("lscpu");
-            Process lscpuProcess = processBuilder.start();
+// Cross-Platform Methods here
 
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(lscpuProcess.getInputStream()));
-
-            String lineOutputStorer;
-            while ((lineOutputStorer = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutputStorer).append("\n");
-            }
-            bufferedReader.close();
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            return "Error: Could not retrieve CPU Information! Is lscpu installed or accessible?";
-        }
-        return stringBuilder.toString().trim();
+    // Detects Operating System
+    public String getOperatingSystem() {
+        return System.getProperty("os.name");
     }
 
-
-    private String getTerminal() {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            String[] cmd = {"/bin/sh", "-c", "echo $DESKTOP_SESSION"};
-            ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-            Process process = processBuilder.start();
-
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineOutput;
-            while ((lineOutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutput).append("\n");
-            }
-            bufferedReader.close();
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            return "Error: Could not retrieve Desktop Session.";
-        }
-        return stringBuilder.toString().trim();
-    }
-
-    private void launchTerminal() {
-        try {
-            String desktopEnvironment = getTerminal().toLowerCase();
-            String command = switch (desktopEnvironment) {
-                case "gnome", "cinnamon" -> "gnome-terminal";
-                case "xfce" -> "xfce4-terminal";
-                case "kde" -> "konsole";
-                case "mate" -> "mate-terminal";
-                case "lxqt" -> "qterminal";
-                case "lxde" -> "lxterminal";
-                default -> "xterm";
-            };
-            ProcessBuilder processBuilder = new ProcessBuilder(command);
-            processBuilder.start();
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-    }
-
-    @org.jetbrains.annotations.NotNull
-    private String getDiskInfo() {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            ProcessBuilder processBuilder = new ProcessBuilder("lsblk");
-            Process process = processBuilder.start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineOutput;
-            while ((lineOutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutput).append("\n");
-            }
-            bufferedReader.close();
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            return "Could not retrieve partition/disk info";
-        }
-        return stringBuilder.toString().trim();
-    }
-
-    private String getLinuxDistro() {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            String[] cmd = {"/bin/sh", "-c", "cat /etc/os-release"};
-            ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-            Process process = processBuilder.start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineOutput;
-            while ((lineOutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutput).append('\n');
-            }
-            bufferedReader.close();
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            return "Error! Could Not Retrieve OS Type!";
-        }
-        return stringBuilder.toString().trim();
-    }
-
-    private String getLinuxDistro(String distributionString) {
-        String[] output = distributionString.split("\n");
-        for (String i : output) {
-            if (i.contains("NAME=")) {
-                return i.replace("NAME=", "").trim();
-            }
-        }
-        return "N/A";
-    }
-
-    private String getPackageManager() {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            String[] cmd = {"/bin/sh", "-c", "if command -v pacman >/dev/null 2>&1; then echo 'pacman'; elif command -v apt >/dev/null 2>&1; then echo 'apt'; elif command -v dnf >/dev/null 2>&1; then echo 'dnf'; else echo 'Unsupported Package Manager'; fi"};
-            ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-            Process process = processBuilder.start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineOutput;
-            while ((lineOutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutput).append("\n");
-            }
-            bufferedReader.close();
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            return "Could not Retrieve Package Manager!";
-        }
-        return stringBuilder.toString().trim();
-    }
-
-    private String updatePackageManager (String packageManager) {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            Process process = getProcess(packageManager);
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineoutput;
-            while ((lineoutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineoutput).append("\n");
-            }
-
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            return "Error! Could not update system!";
-        }
-        return stringBuilder.toString().trim();
-    }
-
-    private static Process getProcess(String packageManager) throws IOException {
-        String packageManagerType;
-        packageManagerType = switch (packageManager.toLowerCase()) {
-            case "pacman" -> "pacman -Syu --noconfirm";
-            case "apt" -> "apt update && apt upgrade -y";
-            case "dnf" -> "dnf -y update && dnf -y upgrade";
-            default -> "echo Your package manager is not supported!";
-        };
-        String[] cmd = {"/bin/sh", "-c", "pkexec /bin/sh -c \"" + packageManagerType + "\""};
-        ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-        return processBuilder.start();
+    // Displays Operating System and Mode to run in to user
+    public void OSPopUpGUI() {
+        JOptionPane.showMessageDialog(null, "You are Running " + getOperatingSystem() + "!" + "\nNow entering " + getOperatingSystem() + " Mode!");
     }
 
     private String getCPUInfoSimplified() {
+        // Utilize OSHI library to obtain CPU info, intended for cross-compatibility with linux/windows mode.
         SystemInfo si = new SystemInfo();
         HardwareAbstractionLayer hardwareAbstractionLayer = si.getHardware();
         CentralProcessor processor = hardwareAbstractionLayer.getProcessor();
         ProcessorIdentifier procID = processor.getProcessorIdentifier();
         return procID.getName();
     }
+
     private String getDiskInfo(String mount) {
+        // StringBuilder appends 3 lines read from File's output and a calculation to get the space used.
         StringBuilder partitionInfo = new StringBuilder();
         File file = new File(mount);
         if (file.exists() && file.isDirectory()) {
@@ -342,6 +191,149 @@ public class SysInsyte {
         }
         return partitionInfo.toString().trim();
     }
+
+    // Linux only methods here
+    private String getCPUInfo() {
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            // Creates ProcessBuilder Instance to launch lscpu command
+            ProcessBuilder processBuilder = new ProcessBuilder("lscpu");
+            Process lscpuProcess = processBuilder.start();
+
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(lscpuProcess.getInputStream()));
+
+            String lineOutputStorer;
+            while ((lineOutputStorer = bufferedReader.readLine()) != null) {
+                stringBuilder.append(lineOutputStorer).append("\n");
+            }
+            bufferedReader.close();
+        } catch (Exception exception) {
+            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Error! Could not retrieve CPU information! Is lscpu installed or accessible?", exception);
+            return "Error: Could not retrieve CPU Information! Is lscpu installed or accessible?";
+        }
+        return stringBuilder.toString().trim();
+    }
+
+    private String getTerminal() {
+        // Retrieves desktop session via clever bash usage and returns output from bufferedreader. Intended only for linux mode
+        try {
+            String[] cmd = {"/bin/sh", "-c", "echo $DESKTOP_SESSION"};
+            Process process = new ProcessBuilder(cmd).start();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            return bufferedReader.readLine();
+        } catch (Exception exception) {
+            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Error! Could not retrieve Desktop Session!", exception);
+            return "Error: Could not retrieve Desktop Session.";
+        }
+    }
+
+    private void launchTerminal() {
+        // Identifies terminal using switch statement to detect desktop environment and therefore its default terminal.
+        try {
+            String desktopEnvironment = getTerminal().toLowerCase();
+            String command = switch (desktopEnvironment) {
+                case "gnome", "cinnamon" -> "gnome-terminal";
+                case "xfce" -> "xfce4-terminal";
+                case "kde" -> "konsole";
+                case "mate" -> "mate-terminal";
+                case "lxqt" -> "qterminal";
+                case "lxde" -> "lxterminal";
+                default -> "xterm";
+            };
+            new ProcessBuilder(command).start();
+        } catch (Exception exception) {
+            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not open terminal!", exception);
+        }
+    }
+
+    @org.jetbrains.annotations.NotNull
+    // Runs lsblk using processbuilder and stores it into a stringbuilder via bufferedreader
+    private String getDiskInfo() {
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder("lsblk");
+            Process process = processBuilder.start();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String lineOutput;
+            while ((lineOutput = bufferedReader.readLine()) != null) {
+                stringBuilder.append(lineOutput).append("\n");
+            }
+            bufferedReader.close();
+        } catch (Exception exception) {
+            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not retrieve partition/disk info!", exception);
+            return "Could not retrieve partition/disk info";
+        }
+        return stringBuilder.toString().trim();
+    }
+
+    private String getLinuxDistro() {
+        try {
+            String[] cmd = {"/bin/sh", "-c", "cat /etc/os-release"};
+            Process process = new ProcessBuilder(cmd).start();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            return bufferedReader.readLine().trim();
+        } catch (Exception exception) {
+            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Error! Could not retrieve OS type!", exception);
+            return "Error! Could not retrieve OS type!";
+        }
+    }
+
+    private String getLinuxDistro(String distributionString) {
+        // Trim output from the default function getLinuxDistro, so it only shows the distro
+        String[] output = distributionString.split("\n");
+        for (String i : output) {
+            if (i.contains("NAME=")) {
+                return i.replace("NAME=", "").trim();
+            }
+        }
+        return "N/A";
+    }
+
+    private String getPackageManager() {
+        try {
+            // This bash line will determine if the package manager is apt, pacman, dnf, or unsupported (We don't like portage or nixpkgs!!!)
+            String[] cmd = {"/bin/sh", "-c", "if command -v pacman >/dev/null 2>&1; then echo 'pacman'; elif command -v apt >/dev/null 2>&1; then echo 'apt'; elif command -v dnf >/dev/null 2>&1; then echo 'dnf'; else echo 'Unsupported Package Manager'; fi"};
+            // Runs a process that runs that long bash command and then reads it with bufferedreader, returning the line read.
+            Process process = new ProcessBuilder(cmd).start();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            return bufferedReader.readLine().trim().toLowerCase();
+        } catch (Exception exception) {
+            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not retrieve package manager", exception);
+            return "Could not retrieve package manager!";
+        }
+    }
+
+    private String updatePackageManager(String packageManager) {
+        // Since more than one line has to be printed out, Bufferedreader will read the stream from method getProcess and store it in a stringbuffer.
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            Process process = getProcess(packageManager);
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String lineoutput;
+            while ((lineoutput = bufferedReader.readLine()) != null) {
+                stringBuilder.append(lineoutput).append("\n");
+            }
+
+        } catch (Exception exception) {
+            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Error! Could not update system!", exception);
+            return "Error! Could not update system!";
+        }
+        return stringBuilder.toString().trim();
+    }
+
+    private static Process getProcess(String packageManager) throws IOException {
+        // Switch statement to identified system's package manager from getPackageManager and runs a root shell to update the system accordingly
+        String packageManagerType;
+        packageManagerType = switch (packageManager.toLowerCase()) {
+            case "pacman" -> "pacman -Syu --noconfirm";
+            case "apt" -> "apt update && apt upgrade -y";
+            case "dnf" -> "dnf -y update && dnf -y upgrade";
+            default -> "echo Your package manager is not supported!";
+        };
+        String[] cmd = {"/bin/sh", "-c", "pkexec /bin/sh -c \"" + packageManagerType + "\""};
+        ProcessBuilder processBuilder = new ProcessBuilder(cmd);
+        return processBuilder.start();
+    }
+
+    // Windows only methods here
 }
-
-
