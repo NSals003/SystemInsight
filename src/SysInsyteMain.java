@@ -8,9 +8,20 @@ public class SysInsyteMain
 
         // Detects Operating System
         String OS = SystemInsightRun.getOperatingSystem();
-
+        // A little bit of logic to see which mode to use, or whether it's supported at all.
         SystemInsightRun.OSPopUpGUI();
-        SystemInsightRun.CreateInsyteGUILinux();
+        switch (OS) {
+            case "Windows 10":
+            case "Windows 11":
+                SystemInsightRun.CreateInsyteGUIWindows();
+                break;
+            case "Linux":
+                SystemInsightRun.CreateInsyteGUILinux();
+                break;
+            default:
+                SystemInsightRun.UnsupportedOSPopUpGUI();
+                break;
+        }
 
 
     }
