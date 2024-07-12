@@ -108,7 +108,7 @@ public class SysInsyte {
         frame.setVisible(true);
 
         // Defined button actions here
-        CPUbutton.addActionListener(_ -> {
+        CPUbutton.addActionListener(event -> {
             String cpuInfo = getCPUInfo();
             JTextArea cpuTextArea = new JTextArea(10, 30);
             cpuTextArea.setText(cpuInfo);
@@ -121,8 +121,8 @@ public class SysInsyte {
             JScrollPane cpuScrollPane = new JScrollPane(cpuTextArea);
             JOptionPane.showMessageDialog(frame, cpuScrollPane, "CPU Information", JOptionPane.INFORMATION_MESSAGE);
         });
-        OpenTerminalButton.addActionListener(_ -> launchTerminal());
-        FreespaceButton.addActionListener(_ -> {
+        OpenTerminalButton.addActionListener(event -> launchTerminal());
+        FreespaceButton.addActionListener(event -> {
             String diskInfo = getDiskInfo();
 
             JTextArea diskTextArea = new JTextArea(10, 50);
@@ -136,7 +136,7 @@ public class SysInsyte {
             JScrollPane diskScrollPane = new JScrollPane(diskTextArea);
             JOptionPane.showMessageDialog(frame, diskScrollPane, "Partition information", JOptionPane.INFORMATION_MESSAGE);
         });
-        updatePackageManagerButton.addActionListener(_ -> {
+        updatePackageManagerButton.addActionListener(event -> {
             int response = JOptionPane.showConfirmDialog(frame, """
                     If you proceed, you will be prompted to enter your password through a separate graphical prompt.\
 
@@ -429,7 +429,7 @@ public class SysInsyte {
         frame.setVisible(true);
 
         // Defined button actions here
-        CPUbutton.addActionListener(_ -> {
+        CPUbutton.addActionListener(event -> {
             String cpuInfo = getAdvancedCpuInfoWindows();
             JTextArea cpuTextArea = new JTextArea(30, 60);
             cpuTextArea.setText(cpuInfo);
@@ -443,7 +443,7 @@ public class SysInsyte {
             JScrollPane cpuScrollPane = new JScrollPane(cpuTextArea);
             JOptionPane.showMessageDialog(frame, cpuScrollPane, "CPU Information", JOptionPane.INFORMATION_MESSAGE);
         });
-        OpenCMDButton.addActionListener(_ -> {
+        OpenCMDButton.addActionListener(event -> {
             int response = JOptionPane.showConfirmDialog(frame, """
                     Would you like to run command prompt with Administrative Privileges?
                     Selecting no will open a standard user command prompt instead. Be cautious when running command prompt as Admin!
@@ -458,7 +458,7 @@ public class SysInsyte {
                 JOptionPane.showMessageDialog(frame, "Cancelled command prompt... select OK to go back to main menu", "Cancelled Command Prompt", JOptionPane.INFORMATION_MESSAGE);
             }
         });
-        AdvancedDriveInformationWindows.addActionListener(_ -> {
+        AdvancedDriveInformationWindows.addActionListener(event -> {
             String diskInfo = getAdvancedDiskInfoWindows();
 
             JTextArea diskTextArea = new JTextArea(30, 50);
@@ -472,7 +472,7 @@ public class SysInsyte {
             JScrollPane diskScrollPane = new JScrollPane(diskTextArea);
             JOptionPane.showMessageDialog(frame, diskScrollPane, "Partition information", JOptionPane.INFORMATION_MESSAGE);
         });
-        GeneralWindowsSystemInfo.addActionListener(_ -> {
+        GeneralWindowsSystemInfo.addActionListener(event -> {
             String systemInfo = getWindowsGeneralInformation();
 
             JTextArea systemInfoTextArea = new JTextArea(30, 60);
