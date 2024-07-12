@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
@@ -26,9 +27,67 @@ import oshi.software.os.OSFileStore;
 import oshi.software.os.OperatingSystem;
 
 public class SysInsyte {
+    // Cross-Platform Methods here
+    // Makes a standalone method that will handle command running and output. Thread-Safe as well for future multithreading
+    private String executeCommandGetOutput(String[] cmd) {
+        try {
+            Process process = new ProcessBuilder(cmd).start();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String inputStream;
+            StringBuffer stringBuffer = new StringBuffer();
+            while ((inputStream = bufferedReader.readLine()) != null) {
+                stringBuffer.append(inputStream).append("\n");
+            }
+            bufferedReader.close();
+            return stringBuffer.toString().trim();
+        } catch (IOException exception) {
+            Logger.getLogger(SysInsyteVersion2.class.getName()).log(Level.SEVERE, "Could not run " + Arrays.toString(cmd) + "!");
+            return "Could not run " + Arrays.toString(cmd) + "!";
+        }
+    }
+    // Detects Operating System
+    public String getOperatingSystem() {
+        return System.getProperty("os.name");
+    }
 
-    // Creates the main Utility GUI Frame for Linux Mode
-    public void CreateInsyteGUILinux() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    // Displays Operating System and Mode to run in to user
+    public void OSPopUpGUI() {
+        JOptionPane.showMessageDialog(null, "You are Running " + getOperatingSystem() + "!" + "\nNow entering " + getOperatingSystem() + " Mode!");
+    }
+
+    public void UnsupportedOSPopUpGUI() {
+        JOptionPane.showMessageDialog(null, "Your operating system " + getOperatingSystem() + " is not currently supported!");
+    }
+
+    private String getCPUInfoSimplified() {
+        // Utilize OSHI library to obtain CPU info, intended for cross-compatibility with linux/windows mode.
+        SystemInfo si = new SystemInfo();
+        HardwareAbstractionLayer hardwareAbstractionLayer = si.getHardware();
+        CentralProcessor processor = hardwareAbstractionLayer.getProcessor();
+        ProcessorIdentifier procID = processor.getProcessorIdentifier();
+        return procID.getName();
+    }
+
+    private String getDiskInfo(String mount) {
+        // StringBuilder appends 3 lines read from File's output and a calculation to get the space used.
+        StringBuilder partitionInfo = new StringBuilder();
+        File file = new File(mount);
+        if (file.exists() && file.isDirectory()) {
+            long totalSpace = new File(mount).getTotalSpace();
+            long usableSpace = new File(mount).getFreeSpace();
+            long usedSpace = totalSpace - usableSpace;
+
+            partitionInfo.append("Total Space: ").append(totalSpace / 1024 / 1024 / 1024).append(" GB\n");
+            partitionInfo.append("Used Space: ").append(usedSpace / 1024 / 1024 / 1024).append(" GB\n");
+            partitionInfo.append("Remaining Space: ").append(usableSpace / 1024 / 1024 / 1024).append(" GB\n");
+        } else {
+            return "Could not locate mount-point " + mount + "!";
+        }
+        return partitionInfo.toString().trim();
+    }
+    // Linux only methods here
+        // Creates main GUI for Linux mode
+        public void CreateInsyteGUILinux() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         // Creates Frame which will be the parent component of the panel, which will hold the buttons and textAreas.
         JFrame frame = new JFrame();
         // Sets look and feel to the native OS's theme and not the default metal
@@ -148,7 +207,7 @@ public class SysInsyte {
 
                     Would you like to proceed?""", "Update Confirm Prompt", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (response == JOptionPane.YES_OPTION) {
-                String packageUpdate = updatePackageManager(getPackageManager());
+                String packageUpdate = launchPackageManager(getPackageManager());
 
                 JTextArea updateTextArea = new JTextArea(10, 50);
                 updateTextArea.setText(packageUpdate);
@@ -165,84 +224,16 @@ public class SysInsyte {
             }
         });
     }
-// Cross-Platform Methods here
-
-    // Detects Operating System
-    public String getOperatingSystem() {
-        return System.getProperty("os.name");
-    }
-
-    // Displays Operating System and Mode to run in to user
-    public void OSPopUpGUI() {
-        JOptionPane.showMessageDialog(null, "You are Running " + getOperatingSystem() + "!" + "\nNow entering " + getOperatingSystem() + " Mode!");
-    }
-
-    public void UnsupportedOSPopUpGUI() {
-        JOptionPane.showMessageDialog(null, "Your operating system " + getOperatingSystem() + " is not currently supported!");
-    }
-
-    private String getCPUInfoSimplified() {
-        // Utilize OSHI library to obtain CPU info, intended for cross-compatibility with linux/windows mode.
-        SystemInfo si = new SystemInfo();
-        HardwareAbstractionLayer hardwareAbstractionLayer = si.getHardware();
-        CentralProcessor processor = hardwareAbstractionLayer.getProcessor();
-        ProcessorIdentifier procID = processor.getProcessorIdentifier();
-        return procID.getName();
-    }
-
-    private String getDiskInfo(String mount) {
-        // StringBuilder appends 3 lines read from File's output and a calculation to get the space used.
-        StringBuilder partitionInfo = new StringBuilder();
-        File file = new File(mount);
-        if (file.exists() && file.isDirectory()) {
-            long totalSpace = new File(mount).getTotalSpace();
-            long usableSpace = new File(mount).getFreeSpace();
-            long usedSpace = totalSpace - usableSpace;
-
-            partitionInfo.append("Total Space: ").append(totalSpace / 1024 / 1024 / 1024).append(" GB\n");
-            partitionInfo.append("Used Space: ").append(usedSpace / 1024 / 1024 / 1024).append(" GB\n");
-            partitionInfo.append("Remaining Space: ").append(usableSpace / 1024 / 1024 / 1024).append(" GB\n");
-        } else {
-            return "Could not locate mount-point " + mount + "!";
-        }
-        return partitionInfo.toString().trim();
-    }
-
-    // Linux only methods here
     private String getCPUInfo() {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            // Creates ProcessBuilder Instance to launch lscpu command
-            ProcessBuilder processBuilder = new ProcessBuilder("lscpu");
-            Process lscpuProcess = processBuilder.start();
-
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(lscpuProcess.getInputStream()));
-
-            String lineOutputStorer;
-            while ((lineOutputStorer = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutputStorer).append("\n");
-            }
-            bufferedReader.close();
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Error! Could not retrieve CPU information! Is lscpu installed or accessible?", exception);
-            return "Error: Could not retrieve CPU Information! Is lscpu installed or accessible?";
-        }
-        return stringBuilder.toString().trim();
+      String[] cmd = {"lscpu"};
+      return executeCommandGetOutput(cmd);
     }
-
     private String getTerminal() {
         // Retrieves desktop session via clever bash usage and returns output from bufferedreader. Intended only for linux mode
-        try {
-            String[] cmd = {"/bin/sh", "-c", "echo $DESKTOP_SESSION"};
-            Process process = new ProcessBuilder(cmd).start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            return bufferedReader.readLine();
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Error! Could not retrieve Desktop Session!", exception);
-            return "Error: Could not retrieve Desktop Session.";
-        }
-    }
+        String[] cmd = {"/bin/sh", "-c", "echo $DESKTOP_SESSION"};
+        return executeCommandGetOutput(cmd);
 
+    }
     private void launchTerminal() {
         // Identifies terminal using switch statement to detect desktop environment and therefore its default terminal.
         try {
@@ -261,38 +252,16 @@ public class SysInsyte {
             Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not open terminal!", exception);
         }
     }
-
     // Runs lsblk using processbuilder and stores it into a stringbuilder via bufferedreader
     private String getDiskInfo() {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            ProcessBuilder processBuilder = new ProcessBuilder("lsblk");
-            Process process = processBuilder.start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineOutput;
-            while ((lineOutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutput).append("\n");
-            }
-            bufferedReader.close();
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not retrieve partition/disk info!", exception);
-            return "Could not retrieve partition/disk info";
-        }
-        return stringBuilder.toString().trim();
+      String[] cmd = {"lsblk"};
+      return executeCommandGetOutput(cmd);
     }
-
     private String getLinuxDistro() {
-        try {
-            String[] cmd = {"/bin/sh", "-c", "cat /etc/os-release"};
-            Process process = new ProcessBuilder(cmd).start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            return bufferedReader.readLine().trim();
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Error! Could not retrieve OS type!", exception);
-            return "Error! Could not retrieve OS type!";
-        }
-    }
+        String[] cmd = {"/bin/sh", "-c", "cat /etc/os-release"};
+        return executeCommandGetOutput(cmd);
 
+    }
     private String getLinuxDistro(String distributionString) {
         // Trim output from the default function getLinuxDistro, so it only shows the distro
         String[] output = distributionString.split("\n");
@@ -303,40 +272,11 @@ public class SysInsyte {
         }
         return "N/A";
     }
-
     private String getPackageManager() {
-        try {
-            // This bash line will determine if the package manager is apt, pacman, dnf, or unsupported (We don't like portage or nixpkgs!!!)
-            String[] cmd = {"/bin/sh", "-c", "if command -v pacman >/dev/null 2>&1; then echo 'pacman'; elif command -v apt >/dev/null 2>&1; then echo 'apt'; elif command -v dnf >/dev/null 2>&1; then echo 'dnf'; else echo 'Unsupported Package Manager'; fi"};
-            // Runs a process that runs that long bash command and then reads it with bufferedreader, returning the line read.
-            Process process = new ProcessBuilder(cmd).start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            return bufferedReader.readLine().trim().toLowerCase();
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not retrieve package manager", exception);
-            return "Could not retrieve package manager!";
-        }
+        String[] cmd = {"/bin/sh", "-c", "if command -v pacman >/dev/null 2>&1; then echo 'pacman'; elif command -v apt >/dev/null 2>&1; then echo 'apt'; elif command -v dnf >/dev/null 2>&1; then echo 'dnf'; else echo 'Unsupported Package Manager'; fi"};
+        return executeCommandGetOutput(cmd);
     }
-
-    private String updatePackageManager(String packageManager) {
-        // Since more than one line has to be printed out, Bufferedreader will read the stream from method getProcess and store it in a stringbuffer.
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            Process process = getProcess(packageManager);
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineoutput;
-            while ((lineoutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineoutput).append("\n");
-            }
-
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Error! Could not update system!", exception);
-            return "Error! Could not update system!";
-        }
-        return stringBuilder.toString().trim();
-    }
-
-    private static Process getProcess(String packageManager) throws IOException {
+    private String launchPackageManager(String packageManager) {
         // Switch statement to identified system's package manager from getPackageManager and runs a root shell to update the system accordingly
         String packageManagerType;
         packageManagerType = switch (packageManager.toLowerCase()) {
@@ -346,12 +286,9 @@ public class SysInsyte {
             default -> "echo Your package manager is not supported!";
         };
         String[] cmd = {"/bin/sh", "-c", "pkexec /bin/sh -c \"" + packageManagerType + "\""};
-        ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-        return processBuilder.start();
+        return executeCommandGetOutput(cmd);
     }
-
     // Windows only methods here
-
     public void CreateInsyteGUIWindows() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         // Creates Frame which will be the parent component of the panel, which will hold the buttons and textAreas.
         JFrame frame = new JFrame();
@@ -487,51 +424,20 @@ public class SysInsyte {
             JOptionPane.showMessageDialog(frame, systemInfoScrollPane, "General System Information", JOptionPane.INFORMATION_MESSAGE);
         });
     }
-
     private String getAdvancedCpuInfoWindows() {
         // Uses annoying windows commands to get the CPU information and stores it in stringBuilder from bufferedreader
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            Process process = new ProcessBuilder("wmic", "cpu", "get", "caption,deviceid,name,numberofcores,maxclockspeed,status").start();
-            process.waitFor();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineOutput;
-            while ((lineOutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutput).append("\n");
-            }
-            bufferedReader.close();
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Unable to print advanced CPU information! ", exception);
-            return "Unable to print advanced CPU information!";
-        }
-        return stringBuilder.toString().trim();
+        String[] cmd = {"wmic", "cpu", "get", "caption,deviceid,name,numberofcores,maxclockspeed,status"};
+        return executeCommandGetOutput(cmd);
     }
-
     private String getAdvancedDiskInfoWindows() {
-        // Uses a stringbuilder to get the output of two commands for disk and partition info from two bufferedreaders.
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            Process process = new ProcessBuilder("wmic", "partition", "get", "Name,Size,Type").start();
-            Process process1 = new ProcessBuilder("wmic", "diskdrive", "get", "model,manufacturer,size,mediaType").start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedReader bufferedReader1 = new BufferedReader(new InputStreamReader(process1.getInputStream()));
-            String lineOuput;
-            // Line by line adds the output from both commands to stringBuilder
-            while ((lineOuput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOuput).append("\n");
-            }
-            while ((lineOuput = bufferedReader1.readLine()) != null) {
-                stringBuilder.append(lineOuput).append("\n");
-            }
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not retrieve advanced disk/partition information!", exception);
-            return "Could not retrieve advanced disk/partition information!";
-        }
-        return stringBuilder.toString().trim();
+        String[] cmd1 = {"wmic", "partition", "get", "Name,Size,Type"};
+        String[] cmd2 = {"wmic", "diskdrive", "get", "model,manufacturer,size,mediaType"};
+        String outputPartition = executeCommandGetOutput(cmd1);
+        String outputDisks = executeCommandGetOutput(cmd2);
+        return outputPartition + "\n" + outputDisks;
 
 
     }
-
     private void launchCMDWindows(int runAsAdmin) {
         // Detects the given input to see whether to run the command prompt as admin, and changes cmd accordingly
         String[] cmd = {""};
@@ -547,35 +453,17 @@ public class SysInsyte {
             Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Unable to open Command Prompt!");
         }
     }
-
     private String getWindowsGeneralInformation() {
-        // Uses stringbuilder to add line-by-line the output of the systeminfo command using bufferedreader.
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            Process process = new ProcessBuilder("systeminfo").start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String lineOutput;
-            while ((lineOutput = bufferedReader.readLine()) != null) {
-                stringBuilder.append(lineOutput).append("\n");
-            }
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Unable to obtain system information!", exception);
-            return "Unable to obtain system information!";
-        }
-        return stringBuilder.toString().trim();
+            // Uses stringbuilder to add line-by-line the output of the systeminfo command using bufferedreader.
+            String[] cmd = {"systeminfo"};
+            return executeCommandGetOutput(cmd);
     }
 
     private String getWindowsBuildVersion() {
         // Since only one line will be printed, no StringBuilder is needed here
-        try {
-            // Uses powershell to filter output, akin to using grep but a little more complex and hard to understand. We don't need the version header
-            Process process = new ProcessBuilder("powershell", "-Command", "\"(& {wmic os get Version | Select-String -Pattern '^[0-9]+'}).Line\"").start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            return bufferedReader.readLine();
-        } catch (Exception exception) {
-            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not retrieve OS version number!");
-            return "Could not retrieve OS version number!";
-        }
+        // Uses powershell to filter output, akin to using grep but a little more complex and hard to understand. We don't need the version header
+        String[] cmd = {"powershell", "-Command", "\"(& {wmic os get Version | Select-String -Pattern '^[0-9]+'}).Line\""};
+        return executeCommandGetOutput(cmd);
     }
     private List<String> getWindowsDisksOSHI() {
         // Creates an ArrayList at mountPoints, iterates through each of the detected mounted filesystems and adds them to the list.
@@ -591,3 +479,4 @@ public class SysInsyte {
         return mountPoints;
     }
 }
+
