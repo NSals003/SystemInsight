@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.CentralProcessor.ProcessorIdentifier;
+import oshi.hardware.GlobalMemory;
 import oshi.hardware.HardwareAbstractionLayer;
 import oshi.software.os.FileSystem;
 import oshi.software.os.OSFileStore;
@@ -85,6 +86,21 @@ public class SysInsyte {
         }
         return partitionInfo.toString().trim();
     }
+    // obtains ram information using OSHI library
+    private String getMemoryInformation() {
+        SystemInfo systemInfo = new SystemInfo();
+        GlobalMemory memory = systemInfo.getHardware().getMemory();
+        StringBuffer stringBuffer = new StringBuffer();
+
+        long totalMemory = memory.getTotal();
+        long availableMemory = memory.getAvailable();
+
+        stringBuffer.append("Total Memory: ").append(totalMemory / (1024 * 1024)).append(" MB");
+        stringBuffer.append("\nAvailable Memory:  ").append(availableMemory / (1024 * 1024)).append(" MB");
+
+        return stringBuffer.toString().trim();
+
+    }
     // Linux only methods here
         // Creates main GUI for Linux mode
         public void CreateInsyteGUILinux() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -135,6 +151,10 @@ public class SysInsyte {
         JTextArea textArea1 = new JTextArea();
         textArea1.setText("CPU: " + getCPUInfoSimplified() + "\n");
         textArea1.setEditable(false);
+        // RAM information textarea
+        JTextArea textAreaRAM = new JTextArea();
+        textAreaRAM.setText(getMemoryInformation() + "\n");
+        textAreaRAM.setEditable(false);
         // Currently only detects the root and home partitions, will probably iterate through a list of mount points in a future version
         JTextArea textArea2 = new JTextArea();
         textArea2.setText("Root Partition \n" + getDiskInfo("/"));
@@ -148,6 +168,7 @@ public class SysInsyte {
         panel.add(textAreaOS, BorderLayout.CENTER);
         panel.add(textAreaPM, BorderLayout.CENTER);
         panel.add(textArea1, BorderLayout.CENTER);
+        panel.add(textAreaRAM, BorderLayout.CENTER);
         panel.add(textArea2, BorderLayout.CENTER);
         panel.add(textArea3, BorderLayout.CENTER);
 
@@ -333,6 +354,10 @@ public class SysInsyte {
         JTextArea textArea1 = new JTextArea();
         textArea1.setText("CPU: " + getCPUInfoSimplified() + "\n");
         textArea1.setEditable(false);
+        // RAM information textarea
+        JTextArea textAreaRAM = new JTextArea();
+        textAreaRAM.setText(getMemoryInformation() + "\n");
+        textAreaRAM.setEditable(false);
 
         // adds the textAreas into the panel
         panel.add(textArea, BorderLayout.CENTER);
