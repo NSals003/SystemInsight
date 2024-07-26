@@ -42,7 +42,7 @@ public class SysInsyte {
             bufferedReader.close();
             return stringBuffer.toString().trim();
         } catch (IOException exception) {
-            Logger.getLogger(SysInsyteVersion2.class.getName()).log(Level.SEVERE, "Could not run " + Arrays.toString(cmd) + "!");
+            Logger.getLogger(SysInsyte.class.getName()).log(Level.SEVERE, "Could not run " + Arrays.toString(cmd) + "!");
             return "Could not run " + Arrays.toString(cmd) + "!";
         }
     }
