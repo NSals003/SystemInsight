@@ -260,7 +260,7 @@ public class SysInsyte {
         try {
             String desktopEnvironment = getTerminal().toLowerCase();
             String command = switch (desktopEnvironment) {
-                case "gnome", "cinnamon" -> "gnome-terminal";
+                case "gnome", "cinnamon", "gnome-classic" -> "gnome-terminal";
                 case "xfce" -> "xfce4-terminal";
                 case "kde" -> "konsole";
                 case "mate" -> "mate-terminal";
