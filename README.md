@@ -12,3 +12,6 @@ FUTURE UPDATES:
 Refactor codebase to a newer UI system
 Switch to maven build system.
 ![image](https://github.com/user-attachments/assets/76e5d831-bcd4-4404-9342-838c33b8c9e9)
+
+
+This software is Licensed under the MIT License, and uses the open-source OSHI library, which uses the LGPL license.
